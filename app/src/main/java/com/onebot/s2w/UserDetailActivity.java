@@ -43,6 +43,7 @@ import com.onebot.s2w.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -81,29 +82,37 @@ public class UserDetailActivity extends AppCompatActivity {
         mPeopleRef = FirebaseUtil.getPeopleRef();
         final String currentUserId = FirebaseUtil.getCurrentUserId();
 
-        final FloatingActionButton followUserFab = (FloatingActionButton) findViewById(R.id
-                .follow_user_fab);
-        mFollowingListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.exists()) {
-                    followUserFab.setImageDrawable(ContextCompat.getDrawable(
-                            UserDetailActivity.this, R.drawable.ic_done_24dp));
-                } else {
-                    followUserFab.setImageDrawable(ContextCompat.getDrawable(
-                            UserDetailActivity.this, R.drawable.ic_person_add_24dp));
+        final FloatingActionButton followUserFab = (FloatingActionButton) findViewById(R.id.follow_user_fab);
+
+        // you can't follow yourself
+        if (!currentUserId.equals(mUserId)) {
+            mFollowingListener = new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+                        followUserFab.setImageDrawable(ContextCompat.getDrawable(
+                                UserDetailActivity.this, R.drawable.ic_done_24dp));
+                    } else {
+                        followUserFab.setImageDrawable(ContextCompat.getDrawable(
+                                UserDetailActivity.this, R.drawable.ic_person_add_24dp));
+                    }
                 }
-            }
 
-            @Override
-            public void onCancelled(DatabaseError firebaseError) {
+                @Override
+                public void onCancelled(DatabaseError firebaseError) {
 
-            }
-        };
-        if (currentUserId != null) {
+                }
+            };
+        } else {
+            // remove fab
+            followUserFab.setVisibility(View.GONE);
+        }
+
+        if (currentUserId != null && !currentUserId.equals(mUserId)) {
             mPeopleRef.child(currentUserId).child("following").child(mUserId)
                     .addValueEventListener(mFollowingListener);
         }
+
         followUserFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -112,9 +121,9 @@ public class UserDetailActivity extends AppCompatActivity {
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                // TODO: Convert these to actually not be single value, for live updating when
-                // current user follows.
-                mPeopleRef.child(currentUserId).child("following").child(mUserId).addListenerForSingleValueEvent(new ValueEventListener() {
+                // TODO: Convert these to actually not be single value, for live updating when current user follows.
+                mPeopleRef.child(currentUserId).child("following").child(mUserId)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
                         Map<String, Object> updatedUserData = new HashMap<>();
@@ -153,13 +162,15 @@ public class UserDetailActivity extends AppCompatActivity {
         mRecyclerGrid.setLayoutManager(new GridLayoutManager(this, GRID_NUM_COLUMNS));
 
         mPersonRef = FirebaseUtil.getPeopleRef().child(mUserId);
-        mPersonInfoListener = mPersonRef.addValueEventListener(new ValueEventListener() {
+        //child.addListenerForSingleValueEvent(new ValueEventListener() {
+        //mPersonInfoListener = mPersonRef.addValueEventListener(new ValueEventListener() {
+        mPersonRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Person person = dataSnapshot.getValue(Person.class);
                 CircleImageView userPhoto = (CircleImageView) findViewById(R.id.user_detail_photo);
-                GlideUtil.loadProfileIcon(person.getProfile_picture(), userPhoto);
-                String name = person.getFull_name();
+                GlideUtil.loadProfileIcon(person.getPhotoUrl(), userPhoto);
+                String name = person.getDisplayName();
                 if (name == null) {
                     name = getString(R.string.user_info_no_name);
                 }
@@ -176,10 +187,12 @@ public class UserDetailActivity extends AppCompatActivity {
                 FirebaseUtil.getPostsRef().child(firstPostKey).addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        Post post = dataSnapshot.getValue(Post.class);
+                        if (dataSnapshot.getValue() != null) {
+                            Post post = dataSnapshot.getValue(Post.class);
 
-                        ImageView imageView = (ImageView) findViewById(R.id.backdrop);
-                        GlideUtil.loadImage(post.getFull_url(), imageView);
+                            ImageView imageView = (ImageView) findViewById(R.id.backdrop);
+                            GlideUtil.loadImage(post.getFull_url(), imageView);
+                        }
                     }
 
                     @Override
@@ -213,13 +226,15 @@ public class UserDetailActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        if (FirebaseUtil.getCurrentUserId() != null) {
+        if (FirebaseUtil.getCurrentUserId() != null && mFollowingListener != null ) {
             mPeopleRef.child(FirebaseUtil.getCurrentUserId()).child("following").child(mUserId)
                     .removeEventListener(mFollowingListener);
         }
 
-        mPersonRef.child(mUserId).removeEventListener(mPersonInfoListener);
-        mFollowersRef.removeEventListener(mFollowersListener);
+        if (mPersonInfoListener != null)
+            mPersonRef.child(mUserId).removeEventListener(mPersonInfoListener);
+        if (mFollowersListener != null)
+            mFollowersRef.removeEventListener(mFollowersListener);
         super.onDestroy();
     }
 
@@ -242,20 +257,28 @@ public class UserDetailActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(final GridImageHolder holder, int position) {
+        public void onBindViewHolder(final GridImageHolder holder, final int position) {
             DatabaseReference ref = FirebaseUtil.getPostsRef().child(mPostPaths.get(position));
             ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
-                public void onDataChange(DataSnapshot dataSnapshot) {
+                public void onDataChange(final DataSnapshot dataSnapshot) {
                     Post post = dataSnapshot.getValue(Post.class);
+
+                    // mixed keys??
+                    if (post == null) return;
+
                     GlideUtil.loadImage(post.getFull_url(), holder.imageView);
                     holder.imageView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                            // TODO: Implement go to post view.
+                            // find index to post
+                            //int index = getIndexForPost(dataSnapshot);
+                            PostsFragment.mRecyclerView.scrollToPosition(position);
+                            finish();
+                            /*// TODO: Implement go to post view.
                             Toast.makeText(UserDetailActivity.this, "Selected: " + holder
                                     .getAdapterPosition(),
-                                    Toast.LENGTH_SHORT).show();
+                                    Toast.LENGTH_SHORT).show();*/
                         }
                     });
                 }
@@ -267,6 +290,32 @@ public class UserDetailActivity extends AppCompatActivity {
             });
         }
 
+        /*private int getIndexForPost(DataSnapshot ds) {
+            final Post post = (Post) ds.getValue();
+            DatabaseReference ref = FirebaseUtil.getPostsRef();
+            ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                int result = 0;
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    Iterator<DataSnapshot> posts = dataSnapshot.getChildren().iterator();
+                    int count = 0;
+                    while(posts.hasNext()) {
+                        Post p = (Post)posts.next().getValue();
+                        if (post.getFull_storage_uri().equals(p.getFull_storage_uri()) {
+                           break;
+                        }
+                        count++;
+                        posts.next();
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+        }
+*/
         public void addPath(String path) {
             mPostPaths.add(path);
             notifyItemInserted(mPostPaths.size());

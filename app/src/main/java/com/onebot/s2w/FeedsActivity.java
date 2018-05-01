@@ -51,6 +51,8 @@ public class FeedsActivity extends AppCompatActivity implements PostsFragment.On
     private static final String TAG = "FeedsActivity";
     private FloatingActionButton mFab;
 
+    public static ViewPager viewPager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,9 +61,10 @@ public class FeedsActivity extends AppCompatActivity implements PostsFragment.On
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ViewPager viewPager = (ViewPager) findViewById(R.id.feeds_view_pager);
+        viewPager = (ViewPager) findViewById(R.id.feeds_view_pager);
         FeedsPagerAdapter adapter = new FeedsPagerAdapter(getSupportFragmentManager());
-        adapter.addFragment(PostsFragment.newInstance(PostsFragment.TYPE_HOME), "HOME");
+        //adapter.addFragment(PostsFragment.newInstance(PostsFragment.TYPE_HOME), "HOME");
+        adapter.addFragment(ContestFragment.newInstance(), "CONTEST");
         adapter.addFragment(PostsFragment.newInstance(PostsFragment.TYPE_FEED), "FEED");
         viewPager.setAdapter(adapter);
         viewPager.setCurrentItem(1);

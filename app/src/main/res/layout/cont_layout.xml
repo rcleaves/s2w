@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:padding="10dp"
+        android:text="Top Posts"
+        android:textSize="24sp" />
+
+    <ImageView
+        android:id="@+id/photo"
+        android:layout_width="400dp"
+        android:layout_height="200dp"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:paddingLeft="10dp"
+        android:foregroundGravity="center_horizontal"
+        android:layout_marginTop="100dp"
+        android:background="@color/cardview_light_background"
+        android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:singleLine="false"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="6dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginBottom="6dp"
+        android:layout_below="@+id/photo"
+        android:textColor="@android:color/primary_text_light"
+        android:textSize="24sp"
+        android:text="caption"
+        android:ellipsize="end" />
+
+    <ImageView
+        android:id="@+id/like_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:padding="4dp"
+        android:layout_below="@+id/text"
+        android:src="@drawable/heart_full"/>
+
+    <TextView
+        android:id="@+id/num_likes"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp"
+        android:text="--"
+        android:layout_below="@+id/text"
+        android:layout_toRightOf="@+id/like_icon"
+        android:textColor="@android:color/secondary_text_light"
+        android:textSize="24sp" />
+
+</RelativeLayout>

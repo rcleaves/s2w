@@ -18,6 +18,7 @@ package com.onebot.s2w;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -32,6 +33,7 @@ import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.onebot.s2w.Models.Author;
@@ -40,6 +42,7 @@ import com.onebot.s2w.R;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -56,7 +59,7 @@ public class PostsFragment extends Fragment {
     private OnPostSelectedListener mListener;
 
 
-    private RecyclerView mRecyclerView;
+    public static RecyclerView mRecyclerView;
     private RecyclerView.Adapter<PostViewHolder> mAdapter;
 
     public PostsFragment() {
@@ -84,6 +87,43 @@ public class PostsFragment extends Fragment {
 
         mRecyclerView = (RecyclerView) rootView.findViewById(R.id.my_recycler_view);
         return rootView;
+    }
+
+    private static long mostLikes = 0;
+    private void setMostLikes(long l) { mostLikes = l; }
+    private long getMostLikes() { return mostLikes; }
+
+    private static String mostLikedPost = "";
+    private void setMostLikedPost(String s ) { mostLikedPost = s; }
+    private String getMostLikedPost() { return mostLikedPost; }
+
+    private void findMostLikes(){
+
+        try {
+            FirebaseUtil.getBaseRef().child("likes")
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                           Iterator<DataSnapshot> likedPosts = dataSnapshot.getChildren().iterator();
+                           while(likedPosts.hasNext()) {
+                               DataSnapshot ds = likedPosts.next();
+                               String postId = ds.getKey();
+                               long count = ds.getChildrenCount();
+                               if (getMostLikes()< count ) {
+                                   setMostLikes(count);
+                                   setMostLikedPost(postId);
+                               }
+                           }
+                        }
+                        @Override
+                        public void onCancelled(DatabaseError firebaseError) {
+
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "caught: " + e);
+        }
+
     }
 
     @Override
@@ -117,6 +157,8 @@ public class PostsFragment extends Fragment {
                 break;
             case TYPE_HOME:
                 Log.d(TAG, "Restoring recycler view position (following): " + mRecyclerViewPosition);
+
+                findMostLikes();
 
                 FirebaseUtil.getCurrentUserRef().child("following").addChildEventListener(new ChildEventListener() {
                     @Override
