@@ -26,8 +26,9 @@ android {
         applicationId "com.onebot.s2w"
         minSdkVersion 17
         targetSdkVersion 23
-        versionCode 3
-        versionName "20160401.02"
+        versionCode 1
+        versionName "1.0"
+        setProperty("archivesBaseName", "onebot-s2w-$versionName")
     }
     signingConfigs {
         release {
