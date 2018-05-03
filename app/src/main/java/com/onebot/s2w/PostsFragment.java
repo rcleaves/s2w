@@ -158,7 +158,7 @@ public class PostsFragment extends Fragment {
             case TYPE_HOME:
                 Log.d(TAG, "Restoring recycler view position (following): " + mRecyclerViewPosition);
 
-                findMostLikes();
+                //findMostLikes();
 
                 FirebaseUtil.getCurrentUserRef().child("following").addChildEventListener(new ChildEventListener() {
                     @Override
@@ -273,6 +273,7 @@ public class PostsFragment extends Fragment {
                 super.onViewRecycled(holder);
 //                FirebaseUtil.getLikesRef().child(holder.mPostKey).removeEventListener(holder.mLikeListener);
             }
+
         };
     }
 
@@ -287,6 +288,9 @@ public class PostsFragment extends Fragment {
         } else {
             postKey = inPostKey;
         }
+
+        // set position
+        post.setPosition(position);
 
         Author author = post.getAuthor();
         postViewHolder.setAuthor(author.getFull_name(), author.getUid());

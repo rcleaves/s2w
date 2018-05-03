@@ -8,15 +8,24 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
+import com.onebot.s2w.Models.Contest;
+import com.onebot.s2w.Models.ContestComparator;
 import com.onebot.s2w.Models.Post;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 
 
@@ -79,17 +88,25 @@ public class ContestFragment extends Fragment {
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
         findMostLikes();
-        Log.d(TAG, "most liked: " + getMostLikedPost() + ", likes: " + getMostLikes());
+        setupFollowers();
+        //Log.d(TAG, "most liked: " + getMostLikedPost() + ", likes: " + getMostLikes());
     }
 
     private View mView;
+    private ContestItemsAdapter adapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
 
-        mView = inflater.inflate(R.layout.cont_layout, container, false);
+        mView = inflater.inflate(R.layout.fragment_contest, container, false);
+
+        adapter = new ContestItemsAdapter(getContext(), contestItems);
+
+        ListView list = (ListView)mView.findViewById(R.id.contest_list);
+        list.setAdapter(adapter);
+
         return mView;
     }
 
@@ -140,6 +157,8 @@ public class ContestFragment extends Fragment {
     private void setMostLikedPost(String s ) { mostLikedPost = s; }
     private String getMostLikedPost() { return mostLikedPost; }
 
+    private ArrayList<Contest> contestItems = new ArrayList<Contest>();
+
     private void findMostLikes(){
 
         try {
@@ -152,10 +171,12 @@ public class ContestFragment extends Fragment {
                                 DataSnapshot ds = likedPosts.next();
                                 String postId = ds.getKey();
                                 long count = ds.getChildrenCount();
-                                if (getMostLikes()< count ) {
+                                if (getMostLikes() < count ) {
                                     setMostLikes(count);
                                     setMostLikedPost(postId);
                                 }
+                                // add all to contest items
+                                getContestPost(postId, count);
                             }
                             getPost(getMostLikedPost());
                             updateUI();
@@ -169,6 +190,8 @@ public class ContestFragment extends Fragment {
             Log.e(TAG, "caught: " + e);
         }
     }
+
+    private int CONTEST_COUNT = 5;
 
     private Post mostLiked;
 
@@ -198,6 +221,43 @@ public class ContestFragment extends Fragment {
             }
         });
     }*/
+
+    private void getContestPost(final String id, final long numLikes) {
+        DatabaseReference ref = FirebaseUtil.getPostsRef();
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterator<DataSnapshot> iter = dataSnapshot.getChildren().iterator();
+                int count = 0;
+                while(iter.hasNext()) {
+                    DataSnapshot item = iter.next();
+                    String key = item.getKey();
+                    if (key.equals(id)) {
+                        Post post = item.getValue(Post.class);
+
+                        // add to contest item list
+                        Contest contest = new Contest();
+                        contest.url = post.getThumb_url();
+                        contest.numLikes = numLikes;
+                        contest.caption = post.getText();
+                        contest.key = key;
+                        contestItems.add(contest);
+                        break;
+                    }
+                    count++;
+                }
+                // sort contest items
+                Collections.sort(contestItems, new ContestComparator());
+                adapter.notifyDataSetChanged();
+                //adapter.addAll(contestItems);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
 
     private void getPost(final String id) {
         DatabaseReference ref = FirebaseUtil.getPostsRef();
@@ -238,6 +298,8 @@ public class ContestFragment extends Fragment {
             likesText.setText(Long.toString(getMostLikes()));
         }
 
+        Log.d(TAG, "contest items: " + contestItems.toString());
+
         // click goes to post
         photo.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -245,6 +307,79 @@ public class ContestFragment extends Fragment {
                 Log.d(TAG, "most like position: " + mostLikePosition);
                 PostsFragment.mRecyclerView.scrollToPosition(mostLikePosition);
                 FeedsActivity.viewPager.setCurrentItem(1);
+            }
+        });
+
+    }
+
+    private void setupFollowers() {
+        FirebaseUtil.getCurrentUserRef().child("following").addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(final DataSnapshot followedUserSnapshot, String s) {
+                String followedUserId = followedUserSnapshot.getKey();
+                String lastKey = "";
+                if (followedUserSnapshot.getValue() instanceof String) {
+                    lastKey = followedUserSnapshot.getValue().toString();
+                }
+                Log.d(TAG, "followed user id: " + followedUserId);
+                Log.d(TAG, "last key: " + lastKey);
+                FirebaseUtil.getPeopleRef().child(followedUserId).child("posts")
+                        .orderByKey().startAt(lastKey).addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(final DataSnapshot postSnapshot, String s) {
+                        HashMap<String, Object> addedPost = new HashMap<String, Object>();
+                        addedPost.put(postSnapshot.getKey(), true);
+                        FirebaseUtil.getFeedRef().child(FirebaseUtil.getCurrentUserId())
+                                .updateChildren(addedPost).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                FirebaseUtil.getCurrentUserRef().child("following")
+                                        .child(followedUserSnapshot.getKey())
+                                        .setValue(postSnapshot.getKey());
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+                    }
+
+                    @Override
+                    public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+                    }
+
+                    @Override
+                    public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
 

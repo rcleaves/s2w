@@ -262,7 +262,7 @@ public class UserDetailActivity extends AppCompatActivity {
             ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(final DataSnapshot dataSnapshot) {
-                    Post post = dataSnapshot.getValue(Post.class);
+                    final Post post = dataSnapshot.getValue(Post.class);
 
                     // mixed keys??
                     if (post == null) return;
@@ -273,12 +273,9 @@ public class UserDetailActivity extends AppCompatActivity {
                         public void onClick(View v) {
                             // find index to post
                             //int index = getIndexForPost(dataSnapshot);
-                            PostsFragment.mRecyclerView.scrollToPosition(position);
+                            getPostPosition(dataSnapshot.getKey());
+                            //PostsFragment.mRecyclerView.scrollToPosition(post.getPosition());
                             finish();
-                            /*// TODO: Implement go to post view.
-                            Toast.makeText(UserDetailActivity.this, "Selected: " + holder
-                                    .getAdapterPosition(),
-                                    Toast.LENGTH_SHORT).show();*/
                         }
                     });
                 }
@@ -336,6 +333,35 @@ public class UserDetailActivity extends AppCompatActivity {
             final float scale = UserDetailActivity.this.getResources().getDisplayMetrics().density;
             return (int) (dps * scale + 0.5f);
         }
+    }
+
+    private int postPosition;
+
+    private void getPostPosition(final String id) {
+        DatabaseReference ref = FirebaseUtil.getPostsRef();
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Iterator<DataSnapshot> iter = dataSnapshot.getChildren().iterator();
+                int count = 0;
+                while(iter.hasNext()) {
+                    DataSnapshot item = iter.next();
+                    String key = item.getKey();
+                    if (key.equals(id)) {
+                        postPosition = count;
+                        break;
+                    }
+                    count++;
+                }
+                // scroll to post
+                PostsFragment.mRecyclerView.scrollToPosition(postPosition);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
     }
 
     private class GridImageHolder extends RecyclerView.ViewHolder {

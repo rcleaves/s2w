@@ -26,6 +26,16 @@ public class Post {
     private String text;
     private Object timestamp;
     private String full_storage_uri;
+    private int position;
+
+    public int getPosition() {
+        return position;
+    }
+
+    public void setPosition(int position) {
+        this.position = position;
+    }
+
 
     public Post() {
         // empty default constructor, necessary for Firebase to be able to deserialize blog posts
