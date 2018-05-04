@@ -37,6 +37,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ServerValue;
 import com.onebot.s2w.Models.Author;
+import com.onebot.s2w.Models.Contest;
 import com.onebot.s2w.Models.Post;
 import com.onebot.s2w.R;
 import com.google.firebase.storage.FirebaseStorage;
@@ -192,6 +193,13 @@ public class NewPostUploadTaskFragment extends Fragment {
                             }
                             Post newPost = new Post(author, fullSizeUrl.toString(), fullSizeRef.toString(),
                                     thumbnailUrl.toString(), thumbnailRef.toString(), postText, ServerValue.TIMESTAMP);
+
+                            // add to contest items
+                            Contest contest = new Contest();
+                            contest.url = newPost.getThumb_url();
+                            contest.key = newPostKey;
+                            contest.caption = newPost.getText();
+                            ContestFragment.contestItems.add(contest);
 
                             Map<String, Object> updatedUserData = new HashMap<>();
                             updatedUserData.put(FirebaseUtil.getPeoplePath() + author.getUid() + "/posts/"

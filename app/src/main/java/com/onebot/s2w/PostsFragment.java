@@ -89,7 +89,7 @@ public class PostsFragment extends Fragment {
         return rootView;
     }
 
-    private static long mostLikes = 0;
+    /*private static long mostLikes = 0;
     private void setMostLikes(long l) { mostLikes = l; }
     private long getMostLikes() { return mostLikes; }
 
@@ -124,7 +124,7 @@ public class PostsFragment extends Fragment {
             Log.e(TAG, "caught: " + e);
         }
 
-    }
+    }*/
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {

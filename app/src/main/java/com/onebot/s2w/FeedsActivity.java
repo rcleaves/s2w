@@ -20,6 +20,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
+import android.provider.ContactsContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.FragmentManager;
@@ -42,9 +43,12 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
+import com.onebot.s2w.Models.Contest;
+import com.onebot.s2w.Models.ContestComparator;
 import com.onebot.s2w.R;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FeedsActivity extends AppCompatActivity implements PostsFragment.OnPostSelectedListener {
@@ -135,6 +139,8 @@ public class FeedsActivity extends AppCompatActivity implements PostsFragment.On
                 } else {
                     postLikesRef.child(postKey).child(userKey).setValue(ServerValue.TIMESTAMP);
                 }
+                // update contest items
+                updateContestItems(dataSnapshot, postKey);
             }
 
             @Override
@@ -142,6 +148,22 @@ public class FeedsActivity extends AppCompatActivity implements PostsFragment.On
 
             }
         });
+    }
+
+    private void updateContestItems(DataSnapshot ds, String key) {
+        for(int i=0; i<ContestFragment.contestItems.size(); i++) {
+            Contest item = ContestFragment.contestItems.get(i);
+            if (item.key.equals(key)) {
+                if (ds.exists())
+                    item.numLikes--;
+                else
+                    item.numLikes++;
+                Collections.sort(ContestFragment.contestItems, new ContestComparator());
+                ContestFragment.contestItems.set(i, item);
+                break;
+            }
+        }
+        ContestFragment.syncItems();
     }
 
     private void showDeleteAlert(final DatabaseReference dbr) {

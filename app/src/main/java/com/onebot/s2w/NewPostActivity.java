@@ -37,10 +37,12 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.onebot.s2w.Models.ContestComparator;
 import com.onebot.s2w.R;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -140,6 +142,7 @@ public class NewPostActivity extends BaseActivity implements
             @Override
             public void run() {
                 mSubmitButton.setEnabled(true);
+                ContestFragment.syncItems();
                 dismissProgressDialog();
                 if (error == null) {
                     Toast.makeText(NewPostActivity.this, "Post created!", Toast.LENGTH_SHORT).show();

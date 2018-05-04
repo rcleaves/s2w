@@ -60,6 +60,8 @@
         android:layout_gravity="end|bottom"
         android:layout_margin="@dimen/fab_margin"
         android:src="@android:drawable/ic_input_add"
-        android:tint="@android:color/white"/>
+        android:tint="@android:color/white"
+        app:backgroundTint="@android:color/holo_green_light"
+        tools:backgroundTint="@android:color/holo_green_light" />
 
 </android.support.design.widget.CoordinatorLayout>

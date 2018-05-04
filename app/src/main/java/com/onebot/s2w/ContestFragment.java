@@ -26,6 +26,7 @@ import com.onebot.s2w.Models.Post;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 
 
@@ -49,6 +50,19 @@ public class ContestFragment extends Fragment {
 
     private final String TAG = "ContestFragment";
 
+    private static long mostLikes = 0;
+    private void setMostLikes(long l) { mostLikes = l; }
+    private long getMostLikes() { return mostLikes; }
+
+    private static String mostLikedPost = "";
+    private void setMostLikedPost(String s ) { mostLikedPost = s; }
+    private String getMostLikedPost() { return mostLikedPost; }
+
+    private View mView;
+
+    public static ContestItemsAdapter adapter;
+    public static ArrayList<Contest> contestItems = new ArrayList<Contest>();
+
     //private OnFragmentInteractionListener mListener;
 
     public ContestFragment() {
@@ -59,19 +73,17 @@ public class ContestFragment extends Fragment {
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
      * @return A new instance of fragment ContestFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static ContestFragment newInstance(String param1, String param2) {
+    /*public static ContestFragment newInstance(String param1, String param2) {
         ContestFragment fragment = new ContestFragment();
         Bundle args = new Bundle();
         args.putString(ARG_PARAM1, param1);
         args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
-    }
+    }*/
 
     public static ContestFragment newInstance() {
         ContestFragment fragment = new ContestFragment();
@@ -92,8 +104,19 @@ public class ContestFragment extends Fragment {
         //Log.d(TAG, "most liked: " + getMostLikedPost() + ", likes: " + getMostLikes());
     }
 
-    private View mView;
-    private ContestItemsAdapter adapter;
+
+    public static void syncItems() {
+        // remove dups
+        HashSet<Contest> hashSet = new HashSet<Contest>();
+        hashSet.addAll(contestItems);
+        contestItems.removeAll(contestItems);
+        contestItems.clear();
+        contestItems.addAll(hashSet);
+
+        // sort and redraw
+        Collections.sort(contestItems, new ContestComparator());
+        adapter.notifyDataSetChanged();
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -149,15 +172,6 @@ public class ContestFragment extends Fragment {
         void onFragmentInteraction(Uri uri);
     }
 
-    private static long mostLikes = 0;
-    private void setMostLikes(long l) { mostLikes = l; }
-    private long getMostLikes() { return mostLikes; }
-
-    private static String mostLikedPost = "";
-    private void setMostLikedPost(String s ) { mostLikedPost = s; }
-    private String getMostLikedPost() { return mostLikedPost; }
-
-    private ArrayList<Contest> contestItems = new ArrayList<Contest>();
 
     private void findMostLikes(){
 
