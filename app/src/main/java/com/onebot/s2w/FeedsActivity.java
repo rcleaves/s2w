@@ -45,6 +45,7 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.onebot.s2w.Models.Contest;
 import com.onebot.s2w.Models.ContestComparator;
+import com.onebot.s2w.Models.Post;
 import com.onebot.s2w.R;
 
 import java.util.ArrayList;
@@ -162,6 +163,7 @@ public class FeedsActivity extends AppCompatActivity implements PostsFragment.On
                 ContestFragment.contestItems.set(i, item);
                 break;
             }
+
         }
         ContestFragment.syncItems();
     }
@@ -201,14 +203,16 @@ public class FeedsActivity extends AppCompatActivity implements PostsFragment.On
 
         showDeleteAlert(postsRef.child(postKey));
 
-        /*.addListenerForSingleValueEvent(new ValueEventListener() {
+        /*postsRef.child(postKey).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 if (dataSnapshot.exists()) {
-                    // User already liked this post, so we toggle like off.
-                    postLikesRef.child(postKey).child(userKey).removeValue();
-                } else {
-                    postLikesRef.child(postKey).child(userKey).setValue(ServerValue.TIMESTAMP);
+                    Post post = (Post)dataSnapshot.getValue(Post.class));
+                    String userId = FirebaseUtil.getCurrentUserId();
+
+                    if (post.getAuthor().equals(userId)) {
+                        showDeleteAlert(postsRef.child(postKey));
+                    }
                 }
             }
 

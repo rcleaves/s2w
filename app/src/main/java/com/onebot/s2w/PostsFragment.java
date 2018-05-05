@@ -17,6 +17,7 @@
 package com.onebot.s2w;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v4.app.Fragment;
@@ -30,6 +31,8 @@ import android.view.ViewGroup;
 
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -74,6 +77,20 @@ public class PostsFragment extends Fragment {
         return fragment;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getActivity() != null)
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (getActivity() != null)
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
+    }
+    
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -295,6 +312,16 @@ public class PostsFragment extends Fragment {
         Author author = post.getAuthor();
         postViewHolder.setAuthor(author.getFull_name(), author.getUid());
         postViewHolder.setIcon(author.getProfile_picture(), author.getUid());
+
+        // can't delete unless it's your post
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String uid = user.getUid();
+        if (!author.getUid().equals(uid)) {
+            postViewHolder.mDeleteIcon.setVisibility(View.GONE);
+        } else {
+            postViewHolder.mDeleteIcon.setVisibility(View.VISIBLE);
+        }
+
 
         ValueEventListener likeListener = new ValueEventListener() {
             @Override

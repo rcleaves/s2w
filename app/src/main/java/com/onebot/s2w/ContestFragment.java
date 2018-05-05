@@ -1,6 +1,7 @@
 package com.onebot.s2w;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -28,6 +29,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -104,18 +107,46 @@ public class ContestFragment extends Fragment {
         //Log.d(TAG, "most liked: " + getMostLikedPost() + ", likes: " + getMostLikes());
     }
 
+    private static int CONTEST_LIST_SIZE = 12;
 
     public static void syncItems() {
         // remove dups
-        HashSet<Contest> hashSet = new HashSet<Contest>();
+        /*HashSet<Contest> hashSet = new HashSet<Contest>();
         hashSet.addAll(contestItems);
         contestItems.removeAll(contestItems);
         contestItems.clear();
-        contestItems.addAll(hashSet);
+        contestItems.addAll(hashSet);*/
 
-        // sort and redraw
-        Collections.sort(contestItems, new ContestComparator());
+
+        // truncate
+        ArrayList<Contest> keep = null;
+        if (contestItems.size() > CONTEST_LIST_SIZE) {
+            keep = new ArrayList<>(contestItems.subList(0, CONTEST_LIST_SIZE));
+            keep = removeDups(keep);
+            // sort and redraw
+            Collections.sort(keep, new ContestComparator());
+            adapter.clear();
+            adapter.addAll(keep);
+            //adapter = new ContestItemsAdapter(mCtx, keep);
+        }
+
         adapter.notifyDataSetChanged();
+    }
+
+    private static Context mCtx;
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getActivity() != null)
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (getActivity() != null)
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR);
     }
 
     @Override
@@ -125,12 +156,36 @@ public class ContestFragment extends Fragment {
 
         mView = inflater.inflate(R.layout.fragment_contest, container, false);
 
-        adapter = new ContestItemsAdapter(getContext(), contestItems);
+        mCtx = getContext();
+
+        contestItems = removeDups(contestItems);
+
+        adapter = new ContestItemsAdapter(mCtx, contestItems);
+
+        syncItems();
 
         ListView list = (ListView)mView.findViewById(R.id.contest_list);
         list.setAdapter(adapter);
 
         return mView;
+    }
+
+    private static ArrayList<Contest> removeDups(ArrayList<Contest> items) {
+        ArrayList<Contest> result = new ArrayList<>();
+
+        HashMap<String, Contest> map = new HashMap<>();
+        for(int i=0; i<items.size(); i++) {
+            Contest item = items.get(i);
+            map.put(item.key, item);
+        }
+
+        Iterator iterator = map.entrySet().iterator();
+        while(iterator.hasNext()) {
+            Map.Entry pair = (Map.Entry)iterator.next();
+            result.add((Contest)pair.getValue());
+        }
+
+        return result;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -260,10 +315,8 @@ public class ContestFragment extends Fragment {
                     }
                     count++;
                 }
-                // sort contest items
-                Collections.sort(contestItems, new ContestComparator());
-                adapter.notifyDataSetChanged();
-                //adapter.addAll(contestItems);
+                // sort and truncate contest items
+                syncItems();
             }
 
             @Override

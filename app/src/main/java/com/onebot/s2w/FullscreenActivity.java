@@ -1,8 +1,13 @@
 package com.onebot.s2w;
 
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
@@ -16,6 +21,9 @@ import com.onebot.s2w.R;
  * status bar and navigation/system bar) with user interaction.
  */
 public class FullscreenActivity extends AppCompatActivity {
+    private String url;
+    private ImageView fullScreenImageView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -23,9 +31,9 @@ public class FullscreenActivity extends AppCompatActivity {
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(com.onebot.s2w.R.layout.activity_fullscreen);
 
-        String url = getIntent().getExtras().getString("URL");
+        url = getIntent().getExtras().getString("URL");
 
-        ImageView fullScreenImageView = (ImageView) findViewById(com.onebot.s2w.R.id.fullscreen_imageview);
+        fullScreenImageView = (ImageView) findViewById(com.onebot.s2w.R.id.fullscreen_imageview);
         Intent callingActivityIntent = getIntent();
         /*if (callingActivityIntent != null) {
             Uri imageUri = callingActivityIntent.getData();
@@ -48,6 +56,24 @@ public class FullscreenActivity extends AppCompatActivity {
                 finish();
             }
         });
+    }
+
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig)
+    {
+        Log.d("tag", "config changed");
+        super.onConfigurationChanged(newConfig);
+
+        int orientation = newConfig.orientation;
+        if (orientation == Configuration.ORIENTATION_PORTRAIT)
+            Log.d("tag", "Portrait");
+        else if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Log.d("tag", "Landscape");
+        }
+        else
+            Log.w("tag", "other: " + orientation);
+
     }
 }
 

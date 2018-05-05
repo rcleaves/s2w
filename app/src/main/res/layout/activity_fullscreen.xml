@@ -7,9 +7,10 @@
     tools:context="com.onebot.s2w.com.onebot.s2w.FullscreenActivity">
 
     <ImageView
+        android:id="@+id/fullscreen_imageview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/fullscreen_imageview"
+        android:adjustViewBounds="true"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true" />
 

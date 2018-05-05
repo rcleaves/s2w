@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -36,7 +37,7 @@ public class PostViewHolder extends RecyclerView.ViewHolder {
 
     public enum LikeStatus { LIKED, NOT_LIKED }
     private final ImageView mLikeIcon;
-    private final ImageView mDeleteIcon;
+    public final ImageView mDeleteIcon;
     private static final int POST_TEXT_MAX_LINES = 6;
     private ImageView mPhotoView;
     private ImageView mIconView;
@@ -158,8 +159,12 @@ public class PostViewHolder extends RecyclerView.ViewHolder {
     }
 
     public void setLikeStatus(LikeStatus status, Context context) {
-        mLikeIcon.setImageDrawable(ContextCompat.getDrawable(context,
-                status == LikeStatus.LIKED ? R.drawable.heart_full : R.drawable.heart_empty));
+        try {
+            mLikeIcon.setImageDrawable(ContextCompat.getDrawable(context,
+                    status == LikeStatus.LIKED ? R.drawable.heart_full : R.drawable.heart_empty));
+        } catch (Throwable e) {
+            Log.e("PostViewHolder", "caught: " + e, e);
+        }
     }
 
 
